@@ -9,13 +9,10 @@ import gridfs
 import os
 from .models import Document
 import shutil
-import uuid
-
-
+from netmiko import ConnectHandler
 
 def download(request):
     return render(request, 'app/ShowTechReport.html')
-
 
 def result(request):
     text = extract_upload()
@@ -69,8 +66,173 @@ def result(request):
         pass
     return render(request, 'app/result.html', {'text': text, 'download': 'app/ShowTechReport.html'})
 
+def snapshot(request):
+    if request.method == 'POST':
+        button = request.POST['button']
+        if button == 'Analyze':
 
-def main(request):
+            username = request.POST['username']
+            password = request.POST['password']
+            ip_address = request.POST['ip_address']
+            command_name = request.POST['dropdown']
+            try:
+                linux = {
+                    'device_type': 'linux',
+                    'ip': ip_address,
+                    'username': username,
+                    'password': password,
+                }
+                connection = ConnectHandler(**linux)
+
+                if command_name == 'show ip interface':
+                    output_of_command = connection.send_command('show ip interface')
+                    print(output_of_command)
+                    print("karan")
+                    output = show_ip_interface(output_of_command)
+                    text = output[0]
+                if command_name == 'show ip route':
+                    output_of_command = connection.send_command('show ip route')
+                    print(output_of_command)
+                    output = show_ip_route(output_of_command)
+                    text = output[0]
+                if command_name == 'show interface status':
+                    output_of_command = connection.send_command('show interface status')
+                    output = show_interface_status(output_of_command)
+                    text = output[0]
+                if command_name == 'show version':
+                    output_of_command = connection.send_command('show version')
+                    output = show_version(output_of_command, None)
+                    text = output[0]
+                location = 'app/templates/app/ShowTechReport.html'
+                Func = open(location, "w")
+                download_text = '''<!DOCTYPE html>
+                    <html lang="en" xmlns="http://www.w3.org/1999/html">
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Report..</title>
+                        <style>
+                        body{
+                            font-family: monospace;
+                            margin:50px 50px;
+                            font-size:15px;
+                        }
+                        </style>
+                    </head>
+                    <body>
+                    <h1 style="font-size:40px; margin-bottom:40px"> Results .. </h1>
+    
+    
+                     ''' + text + '''
+    
+    
+                    </body>
+                    </html>'''
+                # Adding input data to the HTML file
+                Func.write(download_text)
+
+                # Saving the data into the HTML file
+                Func.close()
+                return render(request, 'app/result.html', {'text': text, 'download': 'app/ShowTechReport.html'})
+
+            except:
+                messages.error(request, 'Please enter correct IP address or username or password :(')
+                return redirect('/')
+        else:
+            pass
+    return render(request, 'app/firstInterface.html')
+
+
+
+def textarea(request):
+    if request.method == 'POST':
+        button = request.POST['button']
+        if button == 'Analyze':
+            answer = ''
+            output_of_command = request.POST['textarea']
+            command_name = request.POST['dropdown']
+            if command_name == 'show ip interface':
+                output = show_ip_interface(output_of_command)
+                if output[1]:
+                    answer = output[0]
+            if command_name == 'show ip route':
+                output = show_ip_route(output_of_command)
+                if  output[1]:
+                    answer = output[0]
+            if command_name == 'show interface status':
+                output = show_interface_status(output_of_command)
+                if  output[2]:
+                    answer = output[0]
+            if command_name == 'show top':
+                output = show_top(output_of_command)
+                if  output[1]:
+                    answer = output[0]
+            if command_name == 'show version':
+                output = show_version(output_of_command, None)
+                if  output[1]:
+                    answer = output[0]
+            if command_name == 'show broadcom knet link':
+                output = show_broadcom_knet_link(output_of_command)
+                if  output[2]:
+                    answer = output[0]
+            if command_name == 'show broadcom ps':
+                output = show_broadcom_ps(output_of_command)
+                if  output[1]:
+                    answer = output[0]
+            if command_name == 'show frr interfaces':
+                output = show_frr_interfaces(output_of_command)
+                if  output[1]:
+                    answer = output[0]
+            if command_name == 'show lldp control':
+                output = show_lldpctl(output_of_command)
+                if  output[1]:
+                    answer = output[0]
+            if command_name == 'show port summary':
+                output = show_port_summary(output_of_command)
+                if  output[1]:
+                    answer = output[0]
+            if command_name == 'show bridge fdb':
+                output = show_bridge_fdb(output_of_command)
+                if output[1]:
+                    answer = output[0]
+            if len(answer) != 0:
+                location = 'app/templates/app/ShowTechReport.html'
+                Func = open(location, "w")
+                download_text = '''<!DOCTYPE html>
+                    <html lang="en" xmlns="http://www.w3.org/1999/html">
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Report..</title>
+                        <style>
+                        body{
+                            font-family: monospace;
+                            margin:50px 50px;
+                            font-size:15px;
+                        }
+                        </style>
+                    </head>
+                    <body>
+                    <h1 style="font-size:40px; margin-bottom:40px"> Results .. </h1>
+    
+    
+                     ''' + answer + '''
+    
+    
+                    </body>
+                    </html>'''
+                # Adding input data to the HTML file
+                Func.write(download_text)
+
+                # Saving the data into the HTML file
+                Func.close()
+                return render(request, 'app/result.html', {'text': answer, 'download': 'app/ShowTechReport.html'})
+            else:
+                messages.error(request, 'Please enter the correct output :(')
+                return redirect('/')
+        else:
+            pass
+    return render(request, 'app/firstInterface.html')
+
+def file(request):
     if request.method == 'POST':
         button = request.POST['button']
         if button == 'Analyze':
@@ -81,7 +243,7 @@ def main(request):
 
                 global path
                 path = newdoc.docfile.path
-                print(path)
+
                 try:
                     file = tarfile.open(path)
                 except:
@@ -107,12 +269,15 @@ def main(request):
                     messages.error(request, 'Please Upload correct show-tech file')
                     return redirect('/')
             except:
-                # print(exception)
+
                 messages.error(request, 'Please Upload a file')
                 return redirect('/')
         else:
             pass
 
+    return render(request, 'app/firstInterface.html')
+
+def main(request):
     return render(request, 'app/firstInterface.html')
 
 
@@ -251,7 +416,7 @@ def extract_upload():
             if i['name'] == 'show syslog 1 gz':
                 # calls show_syslog_1_gz() function
                 analyzed_commands['show syslog 1 gz'] = show_syslog_1_gz(i)
-            print(i['name'] + '\n')
+
         for i in proc_data:
             if i['name'] == 'show arp':
                 # calls show_arp() function
@@ -265,10 +430,12 @@ def extract_upload():
         for i in dump_data:
             if i['name'] == 'show interface status':
                 # calls show_interface_status() function
-                analyzed_commands['show interface status'] = show_interface_status(i)
+                output = show_interface_status(i)
+                analyzed_commands['show interface status'] = output
             elif i['name'] == 'show ip interface':
                 # calls show_ip_interface() function
-                analyzed_commands['show ip interface'] = show_ip_interface(i)
+                output = show_ip_interface(i)
+                analyzed_commands['show ip interface'] = output[0]
             elif i['name'] == 'show vlan summary':
                 # calls show_vlan_summary() function
                 if 'show bridge vlan' in analyzed_commands:
@@ -333,7 +500,6 @@ def extract_upload():
             elif i['name'] == 'show docker ps':
                 # calls show_docker_ps() function
                 analyzed_commands['show docker ps'] = show_docker_ps(i)
-            print(i['name'])
 
         # arranging the commands according to priority
         str = ''
@@ -361,9 +527,9 @@ def extract_upload():
         str += '</b></p>\n\n'
 
         if 'show version' in analyzed_commands:
-            str += analyzed_commands['show version']
+            str += analyzed_commands['show version'][0]
             if 'show meminfo' in analyzed_commands:
-                # print(analyzed_commands['show meminfo'])
+
                 del analyzed_commands['show meminfo']
             del analyzed_commands['show version']
 
@@ -379,6 +545,25 @@ def extract_upload():
             str += analyzed_commands['show reboot cause']
             del analyzed_commands['show reboot cause']
 
+        # if 'show broadcom knet link' in analyzed_commands and 'show interface status' in analyzed_commands:
+        #     if analyzed_commands['show broadcom knet link'][1][0] == \
+        #             analyzed_commands['show interface status'][1][
+        #                 0] and analyzed_commands['show broadcom knet link'][1][1] == \
+        #             analyzed_commands['show interface status'][1][1] and \
+        #             analyzed_commands['show broadcom knet link'][1][2] == \
+        #             analyzed_commands['show interface status'][1][2]:
+        #         str += '<p style="color:#000000; font-size:20px;"> <b>' + 'NOTE: show interface status and show broadcom knet link commands are matching\n\n' + '</b></p>'
+        #     else:
+        #         str += '<p style="color:#000000; font-size:20px;"> <b>' + 'NOTE: show interface status and show broadcom knet link commands are not matching\n\n' + '</b></p>'
+
+        if 'show interface status' in analyzed_commands:
+            str += analyzed_commands['show interface status'][0]
+
+
+        if 'show broadcom knet link' in analyzed_commands:
+            str += analyzed_commands['show broadcom knet link'][0]
+
+
         if 'show broadcom knet link' in analyzed_commands and 'show interface status' in analyzed_commands:
             if analyzed_commands['show broadcom knet link'][1][0] == \
                     analyzed_commands['show interface status'][1][
@@ -391,15 +576,13 @@ def extract_upload():
                 str += '<p style="color:#000000; font-size:20px;"> <b>' + 'NOTE: show interface status and show broadcom knet link commands are not matching\n\n' + '</b></p>'
 
         if 'show interface status' in analyzed_commands:
-            str += analyzed_commands['show interface status'][0]
             del analyzed_commands['show interface status']
 
         if 'show broadcom knet link' in analyzed_commands:
-            str += analyzed_commands['show broadcom knet link'][0]
             del analyzed_commands['show broadcom knet link']
 
         if 'show broadcom ps' in analyzed_commands:
-            str += analyzed_commands['show broadcom ps']
+            str += analyzed_commands['show broadcom ps'][0]
             del analyzed_commands['show broadcom ps']
 
         if 'show bridge vlan' in analyzed_commands:
@@ -423,7 +606,7 @@ def extract_upload():
             del analyzed_commands['show docker ps']
 
         if 'show frr interfaces' in analyzed_commands:
-            str += analyzed_commands['show frr interfaces']
+            str += analyzed_commands['show frr interfaces'][0]
             del analyzed_commands['show frr interfaces']
 
         if 'show fp summary' in analyzed_commands:
@@ -431,11 +614,11 @@ def extract_upload():
             del analyzed_commands['show fp summary']
 
         if 'show top' in analyzed_commands:
-            str += analyzed_commands['show top']
+            str += analyzed_commands['show top'][0]
             del analyzed_commands['show top']
 
         if 'show lldpctl' in analyzed_commands:
-            str += analyzed_commands['show lldpctl']
+            str += analyzed_commands['show lldpctl'][0]
             del analyzed_commands['show lldpctl']
 
         if 'show bgp summary' in analyzed_commands:
@@ -447,8 +630,18 @@ def extract_upload():
             del analyzed_commands['show mirror summary']
 
         if 'show port summary' in analyzed_commands:
-            str += analyzed_commands['show port summary']
+            str += analyzed_commands['show port summary'][0]
             del analyzed_commands['show port summary']
+
+        if 'show ip route' in analyzed_commands:
+            str += analyzed_commands['show ip route'][0]
+            del analyzed_commands['show ip route']
+
+        if 'show bridge fdb' in analyzed_commands:
+            str += analyzed_commands['show bridge fdb'][0]
+            del analyzed_commands['show bridge fdb']
+
+
 
         for ii, jj in analyzed_commands.items():
             if ii != 'show syslog gz' and ii != 'show syslog 1 gz':
@@ -637,11 +830,15 @@ def show_meminfo(i):
 
 # this function is used to show broadcom ps
 def show_broadcom_ps(i):
-    content = i['contents']
-    items = content.split('\n')
+    try:
+        content = i['contents']
+        items = content.split('\n')
+    except:
+        items= i.splitlines()
     up = 0
     down = 0
     result = ''
+    correct_or_not = False
     for item in items:
         # regex
         x = re.search('up ', item)
@@ -656,32 +853,37 @@ def show_broadcom_ps(i):
 
         else:
             result += '<p style="color:#DE0D82;"> <b>' + item.replace(' ', '&nbsp;') + '</b></p>'
-
+    if up+down >1:
+        correct_or_not = True
     # These all statements are used for formatting the results to show in result screen.
     string = '<div style="color:#0000FF; font-size:30px;"> <b> show broadcom ps </b></div>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Analysis..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#09075d;"> <b>' + 'number of total links     :'.replace(' ', '&nbsp;') + str(
         up + down) + '</b></p>'
     string += '<p style="color:#014421;"> <b>' + 'number of up links        :'.replace(' ', '&nbsp;') + str(
         up) + '</b></p>'
     string += '<p style="color:#FF0000;"> <b>' + 'number of down links      :'.replace(' ', '&nbsp;') + str(
         down) + '</b></p>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Data..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += result
-    string += '\n\n\n'
-    return string
+    string += '<br><br>'
+    return [string, correct_or_not]
 
 
 # this function is used to show frr interfaces
 def show_frr_interfaces(i):
-    content = i['contents']
-    items = content.split('\n')
+    try:
+        content = i['contents']
+        items = content.split('\n')
+    except:
+        items = i.splitlines()
     count = 0
     result = ''
+    correct_or_not = False
     for item in items:
         # regex
         x = re.search('Interface', item)
@@ -691,18 +893,20 @@ def show_frr_interfaces(i):
             result += '<p style="color:#014421;"> <b>' + item.replace(' ', '&nbsp;') + '</b></p>'
         else:
             result += '<p style="color:#DE0D82;"> <b>' + item.replace(' ', '&nbsp;') + '</b></p>'
+    if count >1 :
+        correct_or_not = True
     # These all statements are used for formatting the results to show in result screen.
     string = '<div style="color:#0000FF; font-size:30px;"> <b> show frr interfaces </b></div>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Analysis..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#09075d;"> <b>number of total interfaces      :' + str(count) + '</b></p>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Data..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += result
-    string += '\n\n\n'
-    return string
+    string += '<br><br>'
+    return [string, correct_or_not]
 
 
 # this function is used to sho the fp summary
@@ -736,8 +940,12 @@ def show_fp_summary(i):
 
 # this function is used to show broadcom knet link
 def show_broadcom_knet_link(i):
-    content = i['contents']
-    items = content.split('\n')
+    try:
+        content = i['contents']
+        items = content.split('\n')
+    except:
+        items = i.splitlines()
+    correct_or_not = False
     down = 0
     up = 0
     result = ''
@@ -754,19 +962,21 @@ def show_broadcom_knet_link(i):
         else:
             result += '<p style="color:#DE0D82;"> <b>' + item.replace(' ', '&nbsp;') + '</b></p>'
     # These all statements are used for formatting the results to show in result screen.
+    if up+down > 1:
+        correct_or_not = True
     string = '<div style="color:#0000FF; font-size:30px;"> <b> show broadcom knet link </b></div>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Analysis..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#09075d;"> <b>number of total interfaces      :' + str(up + down) + '</b></p>'
     string += '<p style="color:#FF0000;"> <b>number of total DOWN interfaces :' + str(down) + '</b></p>'
     string += '<p style="color:#014421;"> <b>number of total UP interfaces   :' + str(up) + '</b></p>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Data..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += result
-    string += '\n\n\n'
-    return [string, [up + down, up, down]]
+    string += '<br><br>'
+    return [string, [up + down, up, down], correct_or_not]
 
 
 # this function is used to show the bridge vlan
@@ -808,9 +1018,16 @@ def show_bridge_vlan(i):
 
 # this function is used to show version
 def show_version(i, meminfo_result):
-    content = i['contents']
+    try:
+        content = i['contents']
+        contents = i['contents']
+        items = content.split('\n')
+    except:
+        contents = i.replace('\n', '<br>')
+
+        items = i.splitlines()
     result = ''
-    items = content.split('\n')
+    correct_or_not = False
     for item in items:
         # regex
         x = re.search('SONiC Software Version:', item)
@@ -818,6 +1035,7 @@ def show_version(i, meminfo_result):
         z = re.search('ASIC:', item)
         if x is not None:
             lst = item.split(':')
+            correct_or_not = True
             result += '<p style="color:#014421;"> <b>' + 'SONiC Software Version : '.replace(' ', '&nbsp;') + lst[
                 1] + '</b></p>'
         if y is not None:
@@ -834,53 +1052,62 @@ def show_version(i, meminfo_result):
 
     # These all statements are used for formatting the results to show in result screen.
     string = '<div style="color:#0000FF; font-size:30px;"> <b> show version </b></div>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Analysis..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += result
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Data..</b> </p>'
-    string += '\n\n'
-    string += '<p style="color:#DE0D82;"> <b>' + content.replace(' ', '&nbsp;') + '</b></p>'
-    string += '\n\n\n'
-    return string
-
+    string += '<br>'
+    string += '<p style="color:#DE0D82;"> <b>' + contents.replace(' ', '&nbsp;') + '</b></p>'
+    string += '<br><br>'
+    return [string, correct_or_not]
 
 # this function is used to show top
 def show_top(i):
-    content = i['contents']
+    try:
+        content = i['contents']
+        items = content.split('\n')
+    except:
+        items = i.splitlines()
     result = ''
     data = ''
-    items = content.split('\n')
+    correct_or_not = False
     for item in items:
         # regex to find the CPU percentage
         x = re.search('Cpu', item)
         if x is not None:
             lst = item.split()
+            correct_or_not = True
             result += '<p style="color:#014421;"> <b>' + 'Percentage CPU sys ' + lst[3] + '</b></p>'
         data += '<p style="color:#DE0D82;"> <b>' + item.replace(' ', '&nbsp;') + '</b></p>'
 
     # These all statements are used for formatting the results to show in result screen.
     string = '<div style="color:#0000FF; font-size:30px;"> <b> show top </b></div>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Analysis..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += result
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Data..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += data
-    string += '\n\n\n'
-    print("ghdu")
-    return string
+    string += '<br><br>'
+    return [string, correct_or_not]
 
 
 # This function is used to show lldp control data
 def show_lldpctl(i):
-    content = i['contents']
-    items = content.split('\n')
+    try:
+        content = i['contents']
+        contents = i['contents']
+        items = content.split('\n')
+    except:
+        items = i.splitlines()
+        contents = i.replace('\n', '<br>')
     result = ''
     count = 0
+    correct_or_not = False
     for item in items:
         # regex to find Interface ChassisId Management id
         x = re.match('Interface:', item)
@@ -893,29 +1120,34 @@ def show_lldpctl(i):
             result += '<p style="color:#014421;"> <b>' + item.replace(' ', '&nbsp;') + '</b></p>'
         elif z is not None:
             result += '<p style="color:#014421;"> <b>' + item.replace(' ', '&nbsp;') + '</b></p>'
-
+    if count>0:
+        correct_or_not = True
     # These all statements are used for formatting the results to show in result screen.
     string = '<div style="color:#0000FF; font-size:30px;"> <b> show lldp control </b></div>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Analysis..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#09075d;"> <b>Total number of interfaces: ' + str(count) + '</b></p>' + '\n'
     result += '<p style="color:#014421;"> <b>' + result + '</b></p>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Data..</b> </p>'
-    string += '\n\n'
-    string += '<p style="color:#DE0D82;"> <b>' + i['contents'].replace(' ', '&nbsp;') + '</b></p>'
-    string += '\n\n\n'
-    return string
+    string += '<br>'
+    string += '<p style="color:#DE0D82;"> <b>' + contents.replace(' ', '&nbsp;') + '</b></p>'
+    string += '<br><br>'
+    return [string, correct_or_not]
 
 
 # this function is used to show the port summary
 def show_port_summary(i):
-    content = i['contents']
+    try:
+        content = i['contents']
+        items = content.split('\n')
+    except:
+        items= i.splitlines()
     result = ''
-    items = content.split('\n')
     disable = 0
     enable = 0
+    correct_or_not = False
     for item in items:
         # regex to find Disabled entries
         x = re.search('Disabled', item)
@@ -929,22 +1161,23 @@ def show_port_summary(i):
         elif y is not None:
             result += '<p style="color:#014421;"> <b>' + item.replace(' ', '&nbsp;') + '</b></p>'
             enable = enable + 1
-
+    if enable> 0  or disable> 0:
+        correct_or_not = True
     # These all statements are used for formatting the results to show in result screen.
     string = '<div style="color:#0000FF; font-size:30px;"> <b> show port summary </b></div>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Analysis..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#014421;"> <b>' + 'Number of entries which are enabled        :'.replace(' ', '&nbsp')
     string += str(enable) + '</b></p>'
     string += '<p style="color:#FF0000;"> <b>' + 'Number of entries which are disabled       :'.replace(' ', '&nbsp')
     string += str(disable) + '</b></p>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Data..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += result
-    string += '\n\n\n'
-    return string
+    string += '<br><br>'
+    return [string, correct_or_not]
 
 
 # this function is used to show mirror summary
@@ -1124,11 +1357,15 @@ def show_bgp_summary(i):
 
 # This function match the statement which starts from IP address e.g, 10.0.0.1/32
 def show_ip_route(i):
-    content = i['contents']
-    list = content.split('\n')
+    try:
+        content = i['contents']
+        list = content.split('\n')
+    except:
+        list = i.splitlines()
     count = 0
     result = ''
     linkdown = 0
+    correct_or_not = False
     for item in list:
         # regex match the statement starts with an IP address
         x = re.match('([1-9]|[1-9][0-9]{1,3})\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\/?[0-9]?[0-9]?(/[0-9]{1,2}|/2[0-4][0-9]|/25[0-5])', item)
@@ -1143,34 +1380,42 @@ def show_ip_route(i):
             else:
                 result += '<p style="color:#014421;"> <b>' + item.replace(' ', '&nbsp;') + '</b></p>'
             count = count + 1
+    if count > 0:
+        correct_or_not = True
     # These all statements are used for formatting the results to show in result screen.
-    string = '<div style="color:#0000FF; font-size:30px;"> <b> show ip route </b></div>'
-    string += '\n\n'
-    string += '<p style="color:#000000; font-size:20px;"> <b>Analysis..</b> </p>'
-    string += '\n\n'
+    string = '<div style="color:#0000FF; font-size:30px;"> <b> show ip route </b></div><br>'
+    string += ''
+    string += '<p style="color:#000000; font-size:20px;"> <b>Analysis..</b> </p><br>'
+    string += ''
     string += '<p style="color:#09075d;"> <b>' +'Number of entries                  : '.replace(' ', '&nbsp;')
-    string += str(count) + '</b></p>'
-    string += '\n'
+    string += str(count) + '</b></p><br>'
+    string += ''
     string += '<p style="color:#FF0000;"> <b>' + 'Number of entries with linkdown    : '.replace(' ', '&nbsp;')
-    string += str(linkdown) + '</b></p>'
-    string += '\n'
+    string += str(linkdown) + '</b></p><br>'
+    string += ''
     string += '<p style="color:#014421;"> <b>' + 'Number of entries without linkdown : '.replace(' ', '&nbsp;')
-    string += str(count - linkdown) + '</b></p>'
-    string += '\n\n'
-    string += '<p style="color:#000000; font-size:20px;"> <b>Data..</b> </p>'
-    string += '\n\n'
+    string += str(count - linkdown) + '</b></p><br>'
+    string += ''
+    string += '<p style="color:#000000; font-size:20px;"> <b>Data..</b> </p><br>'
+    string += ''
     string += result
-    string += '\n\n\n'
-    return string
+    string += '<br><br>'
+    return [string, correct_or_not]
 
 
 # This function match the statement which starts from mac-address e.g, 01:01:01:01:01:01
 def show_bridge_fdb(i):
-    content = i['contents']
+    try:
+        content = i['contents']
+        list = content.split('\n')
+    except:
+        list = i.splitlines()
+
     interface = dict()
-    list = content.split('\n')
+
     count = 0
     result = ''
+    correct_or_not = False
     for item in list:
         # regex match the statement starts with a mac-address
         result += '<p style="color:#DE0D82;"> <b>' + item.replace(' ', '&nbsp;') + '</b></p>'
@@ -1181,12 +1426,13 @@ def show_bridge_fdb(i):
         else:
             interface[value[2]] = interface.get(value[2], 0) + 1
             count = count + 1
-
+    if count>0 :
+        correct_or_not = True
     # These all statements are used for formatting the results to show in result screen.
     string = '<div style="color:#0000FF; font-size:30px;"> <b> show bridge fdb </b></div>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Analysis..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#09075d;"><b>' + 'Number of entries                              : '.replace(' ','&nbsp;')
     string += str(count) + '</b></p>'
     for key, value in interface.items():
@@ -1196,21 +1442,25 @@ def show_bridge_fdb(i):
         string += '<p style="color:#014421;"> <b>' +'Number of entries in interface ' + ans.replace(' ',
                                                                                                 '&nbsp;') + ' : ' + str(
             value) + ' </b></p>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Data..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += result
-    string += '\n\n\n'
-    return string
+    string += '<br><br>'
+    return [string, correct_or_not]
 
 
 # This function searches for number of UP and DOWN Interfaces on teh basis of oper.
 def show_interface_status(i):
-    content = i['contents']
-    list = content.split('\n')
+    try:
+        content = i['contents']
+        list = content.split('\n')
+    except:
+        list = i.splitlines()
     result = ''
-    up = 0
-    down = 0
+    up=0
+    down=0
+    correct_or_not = False
     for item in list:
         # regex for searching the statement which contains UP
         x = re.search('up', item)
@@ -1230,32 +1480,39 @@ def show_interface_status(i):
         else:
             result += '<p style="color:#FF0000;"> <b>' + item.replace(' ', '&nbsp;') + '</b></p>'
             down = down + 1
+    if up+down >0 :
+        correct_or_not = True
     # These all statements are used for formatting the results to show in result screen.
-    string = '<div style="color:#0000FF; font-size:30px;"> <b> show interface status </b></div>'
-    string += '\n\n'
-    string += '<p style="color:#000000; font-size:20px;"> <b>Analysis..</b> </p>'
-    string += '\n\n'
+    string = '<div style="color:#0000FF; font-size:30px;"> <b> show interface status </b></div><br>'
+    string += ''
+    string += '<p style="color:#000000; font-size:20px;"> <b>Analysis..</b> </p><br>'
+    string += ''
     string += '<p style="color:#09075d;"><b>' + 'Total number of Interfaces      : '.replace(' ', '&nbsp;')
     string += str(up + down) + '</b></p>'
     string += '<p style="color:#014421;"><b>' + 'Total number of UP Interfaces   : '.replace(' ', '&nbsp;')
     string += str(up) + '</b></p>'
     string += '<p style="color:#FF0000;"><b>' + 'Total number of DOWN Interfaces : '.replace(' ', '&nbsp;')
-    string += str(down) + '</b></p>'
-    string += '\n\n'
-    string += '<p style="color:#000000; font-size:20px;"> <b>Data..</b> </p>'
-    string += '\n\n'
+    string += str(down) + '</b></p><br>'
+    string += ''
+    string += '<p style="color:#000000; font-size:20px;"> <b>Data..</b> </p><br>'
+    string += ''
     string += result
-    string += '\n\n\n'
-    return [string, [up + down, up, down]]
+    string += '<br> <br>'
+    return [string, [up+down, up, down],  correct_or_not]
 
 
 # This function searches for number of UP and DOWN Interfaces on the basis of oper.
 def show_ip_interface(i):
-    content = i['contents']
-    list = content.split('\n')
+    try:
+        content = i['contents']
+        list = content.split('\n')
+    except:
+        list = i.splitlines()
     up = 0
     down = 0
     result = ''
+    ans= '-1'
+    correct_or_not = False
     for item in list:
         # regex for searching the statement which contains UP
         x = re.search('(?s:.*)up', item)
@@ -1278,22 +1535,24 @@ def show_ip_interface(i):
         else:
             result += item
     # These all statements are used for formatting the results to show in result screen.
+    if up+down > 0:
+        correct_or_not = True
     string = '<div style="color:#0000FF; font-size:30px;"> <b> show ip interface </b></div>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Analysis..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#09075d;"><b>'+'Total number of Interfaces      : '.replace(' ', '&nbsp;')
     string += str(up + down) + '</b></p>'
     string += '<p style="color:#014421;"><b>'+'Total number of UP Interfaces   : '.replace(' ', '&nbsp;')
     string += str(up) + '</b></p>'
     string += '<p style="color:#FF0000;"><b>'+'Total number of DOWN Interfaces : '.replace(' ', '&nbsp;')
     string += str(down) + '</b></p>'
-    string += '\n\n'
+    string += '<br>'
     string += '<p style="color:#000000; font-size:20px;"> <b>Data..</b> </p>'
-    string += '\n\n'
+    string += '<br>'
     string += result
-    string += '\n\n\n'
-    return string
+    string += '<br><br>'
+    return [string, correct_or_not]
 
 
 # This function searches for number of Vlan Entries.
@@ -1307,12 +1566,20 @@ def show_vlan_summary(i, lst):
         y = re.search('disabled', item)
         z = re.search('tagged', item)
         u = re.search('untagged', item)
+        data_lst = item.split()
         if x is None and y is None and z is None and u is None:
             # formatted text with color
             result += '<p style="color:#000000;"> <b>' + item.replace(' ', '&nbsp;') + '</b></p>'
         else:
             result += '<p style="color:#DE0D82;"> <b>' + item.replace(' ', '&nbsp;') + '</b></p>'
-            count = count + 1
+        try:
+
+            k = int(data_lst[1])
+            count = count+1
+        except:
+            pass
+
+
     # These all statements are used for formatting the results to show in result screen.
     string = '<div style="color:#0000FF; font-size:30px;"> <b> show vlan summary '+'</b></div>'
     string += '\n\n'

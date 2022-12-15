@@ -11,7 +11,6 @@
         background-color:rgb(164, 163, 167);
         margin:50px 50px;
         font-family: monospace;
-
     }
     </style>
 </head>
@@ -20,8 +19,9 @@
     {% include 'app/message.html' %}
 
     <div style="padding-left:20px; padding-right:20px; padding-bottom:50px;">
-    <h1 style="text-align:center; color:rgb(30,144, 247);  padding:100px; font-size:40px; background-color:white;"><b>Show Tech Analyzer</b></h1>
-    <div style="font-size:20px; margin-top:100px">
+    <h1 style="text-align:center; color:rgb(30,144, 247);   font-size:60px;"><b>Show Tech Analyzer</b></h1>
+
+        <div style="font-size:20px; margin-top:50px; border:black; border-width:2px; border-style:solid; padding:10px;"  >
         <p> Upload the SONiC <span  style="color:red;"><b> Show Tech</b></span><span> file</span></p>
 <!--            <label for="command">Upload the </label>-->
 <!--&lt;!&ndash;            <select name="SONiC" id="command" style="font-size:20px;">&ndash;&gt;-->
@@ -30,11 +30,85 @@
 <!--&lt;!&ndash;            </select>&ndash;&gt;-->
 <!--            -->
 <!--        <label for="command"><span  style="color:red;"><b> Show Tech</b></span><span> file</span></label>-->
-    </div>
-    <div style="font-size:20px; margin-top:20px">
-        <form method="POST"  enctype="multipart/form-data">
+
+
+        <form method="POST"  enctype="multipart/form-data" action="file">
             {% csrf_token %}
             <input id="filename" type="file" name="filename" accept=".tar.gz"/>
+            <div>
+                <button type="submit" name="button" style="font-size:20px; margin-top:20px; color:red;" value="Analyze">Analyze</button><span>
+                <button type="submit" name="button" style=" font-size:20px;margin-top:20px; color:blue;" value="Reset_file">Reset file</button></span>
+            </div>
+        </form>
+    </div>
+
+
+    <div style= "font-size:20px; margin-top:50px; border:black; border-width:2px; border-style:solid; padding:10px;">
+
+        <form method="POST"  enctype="multipart/form-data" action="textarea">
+            {% csrf_token %}
+             <p> Select the SONiC
+            <span>
+                <select name = "dropdown">
+                    <option value = "show top">show top</option>
+                    <option value = "show ip interface" selected>show ip interface</option>
+                    <option value = "show ip route">show ip route</option>
+                    <option value = "show interface status">show interface status</option>
+                    <option value = "show version">show version</option>
+                    <option value = "show broadcom knet link">show broadcom knet link</option>
+                    <option value = "show broadcom ps">show broadcom ps</option>
+                    <option value = "show frr interfaces">show frr interface</option>
+                    <option value = "show lldp control">show lldp control</option>
+                    <option value = "show port summary">show port summary</option>
+                    <option value = "show bridge fdb">show bridge fdb</option>
+                 </select>
+            </span>
+            <span  style="color:red;"><b> Show Tech</b></span><span> command </span> </p>
+
+            <div class="form-outline">
+                <textarea class="form-control" id="textAreaExample2" name="textarea" rows="4"></textarea>
+            </div>
+            <div>
+                <button type="submit" name="button" style="font-size:20px; margin-top:20px; color:red;" value="Analyze">Analyze</button><span>
+                <button type="submit" name="button" style=" font-size:20px;margin-top:20px; color:blue;" value="Reset_file">Reset file</button></span>
+            </div>
+        </form>
+    </div>
+
+
+
+
+        <div style= "font-size:20px; margin-top:50px; border:black; border-width:2px; border-style:solid; padding:10px;" >
+
+        <form method="POST"  enctype="multipart/form-data" action="snapshot">
+            {% csrf_token %}
+             <p> Select the SONiC
+            <span>
+                <select name = "dropdown">
+                    <option value = "show ip interface" selected>show ip interface</option>
+                    <option value = "show ip route">show ip route</option>
+                    <option value = "show interface status">show interface status</option>
+                    <option value = "show version">show version</option>
+                 </select>
+            </span>
+            <span  style="color:red;"><b> Show Tech</b></span><span> command </span> </p>
+            <div>Please enter these fields :</div><br>
+            <div class="form-outline">
+                <div>
+                    <label>IP Address</label>
+                    <input name="ip_address" type="text" >
+                </div>
+                 <div>
+                    <label>Username &nbsp;</label>
+                    <input name="username" type="text" >
+                </div>
+                 <div>
+                    <label>Password &nbsp;</label>
+                    <input name="password" type="password" >
+                </div>
+
+
+            </div>
             <div>
                 <button type="submit" name="button" style="font-size:20px; margin-top:20px; color:red;" value="Analyze">Analyze</button><span>
                 <button type="submit" name="button" style=" font-size:20px;margin-top:20px; color:blue;" value="Reset_file">Reset file</button></span>
